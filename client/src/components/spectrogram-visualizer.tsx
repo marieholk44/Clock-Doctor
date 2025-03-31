@@ -125,7 +125,7 @@ export default function SpectrogramVisualizer({ spectrogramData }: SpectrogramVi
         ctx.fillText('past', 2, 12);
         
         // Add time scale
-        const totalTimeSeconds = 7.5; // Based on 15 frames at ~60fps = 0.25s per frame
+        const totalTimeSeconds = 7.5; // Based on 30 frames at 4fps = 0.25s per frame
         ctx.fillStyle = 'rgba(148, 163, 184, 0.7)';
         ctx.textAlign = 'center';
         ctx.fillText(`${totalTimeSeconds.toFixed(1)}s time window`, width / 2, height - 4);

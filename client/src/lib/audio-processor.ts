@@ -180,7 +180,7 @@ export class AudioProcessor {
 
   // Store historical spectrograms to create a longer time view
   private spectrogramHistory: Uint8Array[] = [];
-  private readonly historyLength = 15; // Store more frames to show a longer time window
+  private readonly historyLength = 30; // Store more frames to show a proper 7.5 second time window (30 frames at ~4 frames/sec)
   
   private startAnalysisLoop(): void {
     if (!this.analyserNode) return;
@@ -188,48 +188,54 @@ export class AudioProcessor {
     // Clear history when starting
     this.spectrogramHistory = [];
     
+    // Track time for frame rate control
+    let lastCaptureTime = 0;
+    let frameInterval = 250; // Aim for ~4 frames per second, to get a 7.5 second history with 30 frames
+    
     const analyzeAudio = () => {
       if (!this.analyserNode) return;
       
-      // Get frequency data for spectrogram
-      this.analyserNode.getByteFrequencyData(this.spectrogramData);
+      const now = Date.now();
+      const timeSinceLastCapture = now - lastCaptureTime;
       
-      // Create a copy of the data to avoid reference issues - using the proper way to copy Uint8Array
-      const spectrogramDataCopy = new Uint8Array(this.spectrogramData.length);
-      spectrogramDataCopy.set(this.spectrogramData);
-      
-      // Store in history for time-stretched display
-      if (this.spectrogramHistory.length >= this.historyLength) {
-        this.spectrogramHistory.shift(); // Remove oldest frame
-      }
-      this.spectrogramHistory.push(spectrogramDataCopy);
-      
-      // Create a combined spectrogram from history
-      const combinedSpectrogram = this.createCombinedSpectrogram();
-      
-      // Debug info
-      console.log(`Spectrogram data: length=${combinedSpectrogram.length}, non-zero=${combinedSpectrogram.some(v => v > 0)}`);
-      
-      // Send to visualizer
-      this.config.onSpectrogramData(combinedSpectrogram);
-      
+      // Always process audio for sound detection
       // Get time domain data for waveform
       this.analyserNode.getByteTimeDomainData(this.waveformData);
       
-      // Create a copy of the data to avoid reference issues - using the proper way to copy Uint8Array
+      // Create a copy of the data to avoid reference issues
       const waveformDataCopy = new Uint8Array(this.waveformData.length);
       waveformDataCopy.set(this.waveformData);
       
-      // Debug info (less frequent to reduce console spam)
-      if (Math.random() < 0.1) { // Only log ~10% of frames
-        console.log(`Waveform data: length=${waveformDataCopy.length}, non-zero=${waveformDataCopy.some(v => v !== 128)}`);
-      }
-      
-      // Send to visualizer
+      // Always update waveform display and detect sounds (important for responsiveness)
       this.config.onWaveformData(waveformDataCopy);
-      
-      // Detect sounds
       this.detectSounds();
+      
+      // But throttle spectrogram updates to slow down the scrolling
+      if (timeSinceLastCapture >= frameInterval) {
+        lastCaptureTime = now;
+        
+        // Get frequency data for spectrogram
+        this.analyserNode.getByteFrequencyData(this.spectrogramData);
+        
+        // Create a copy of the data
+        const spectrogramDataCopy = new Uint8Array(this.spectrogramData.length);
+        spectrogramDataCopy.set(this.spectrogramData);
+        
+        // Store in history for time-stretched display
+        if (this.spectrogramHistory.length >= this.historyLength) {
+          this.spectrogramHistory.shift(); // Remove oldest frame
+        }
+        this.spectrogramHistory.push(spectrogramDataCopy);
+        
+        // Create a combined spectrogram from history
+        const combinedSpectrogram = this.createCombinedSpectrogram();
+        
+        // Debug info
+        console.log(`Spectrogram data: length=${combinedSpectrogram.length}, non-zero=${combinedSpectrogram.some(v => v > 0)}`);
+        
+        // Send to visualizer
+        this.config.onSpectrogramData(combinedSpectrogram);
+      }
       
       // Continue the loop
       this.animationFrameId = requestAnimationFrame(analyzeAudio);
