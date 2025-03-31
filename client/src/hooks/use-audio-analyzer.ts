@@ -18,8 +18,8 @@ export function useAudioAnalyzer() {
   const [recordingTime, setRecordingTime] = useState("00:00:00");
   
   // Sensitivity controls
-  const [detectionThreshold, setDetectionThreshold] = useState(40);
-  const [noiseReduction, setNoiseReduction] = useState(30);
+  const [detectionThreshold, setDetectionThreshold] = useState(20);
+  const [noiseReduction, setNoiseReduction] = useState(20);
   
   // Visualization data
   const [spectrogramData, setSpectrogramData] = useState<Uint8Array | null>(null);
@@ -32,7 +32,7 @@ export function useAudioAnalyzer() {
   // Refs
   const audioProcessorRef = useRef<AudioProcessor | null>(null);
   const startTimeRef = useRef<number>(0);
-  const timerIntervalRef = useRef<number | null>(null);
+  const timerIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const recordingStartTime = useRef<number>(0);
   
   // Initialize audio processor
@@ -158,6 +158,7 @@ export function useAudioAnalyzer() {
       clearInterval(timerIntervalRef.current);
     }
     
+    // Use the correct type for the interval
     timerIntervalRef.current = setInterval(() => {
       const elapsedSeconds = Math.floor((Date.now() - startTimeRef.current) / 1000);
       const hours = Math.floor(elapsedSeconds / 3600).toString().padStart(2, '0');
