@@ -56,7 +56,7 @@ export class AudioProcessor {
       this.gainNode = this.audioContext.createGain();
       
       // Configure analyser - optimized for clock sound frequencies
-      this.analyserNode.fftSize = 4096;  // Larger FFT size for better frequency resolution
+      this.analyserNode.fftSize = 2048;  // Reduced from 4096 for better visualization performance
       this.analyserNode.smoothingTimeConstant = 0.5;  // Less smoothing for more responsive detection
       
       // Set initial gain higher for clock sounds
@@ -73,12 +73,40 @@ export class AudioProcessor {
       this.gainNode.connect(filterNode);
       filterNode.connect(this.analyserNode);
       
-      // Initialize data arrays
-      this.spectrogramData = new Uint8Array(this.analyserNode.frequencyBinCount);
-      this.waveformData = new Uint8Array(this.analyserNode.fftSize);
+      // Initialize data arrays with proper sizes
+      const frequencyBinCount = this.analyserNode.frequencyBinCount;
+      const timeDataLength = this.analyserNode.fftSize;
       
-      // Start analysis loop
-      this.startAnalysisLoop();
+      console.log(`Creating frequency data array with ${frequencyBinCount} bins`);
+      console.log(`Creating time domain data array with ${timeDataLength} samples`);
+      
+      this.spectrogramData = new Uint8Array(frequencyBinCount);
+      this.waveformData = new Uint8Array(timeDataLength);
+      
+      // Create some initial data for testing - simulated sine wave
+      for (let i = 0; i < this.waveformData.length; i++) {
+        // Create a simple sine wave centered at 128 with amplitude 64
+        this.waveformData[i] = 128 + Math.floor(64 * Math.sin(i * 0.1));
+      }
+      
+      // Send initial data to visualizers to make sure they work
+      this.config.onWaveformData(new Uint8Array(this.waveformData));
+      
+      // Add some simulated frequency data
+      for (let i = 0; i < this.spectrogramData.length; i++) {
+        // Create a frequency pattern with peaks in clock-relevant frequencies
+        if (i > 20 && i < 100) {
+          this.spectrogramData[i] = 50 + Math.floor(50 * Math.sin(i * 0.2));
+        }
+      }
+      
+      this.config.onSpectrogramData(new Uint8Array(this.spectrogramData));
+      
+      // Wait a moment to make sure initializing is complete
+      setTimeout(() => {
+        // Start the real analysis loop
+        this.startAnalysisLoop();
+      }, 500);
       
       // Reset state
       this.lastPulseTime = 0;
@@ -158,11 +186,29 @@ export class AudioProcessor {
       
       // Get frequency data for spectrogram
       this.analyserNode.getByteFrequencyData(this.spectrogramData);
-      this.config.onSpectrogramData(this.spectrogramData);
+      
+      // Create a copy of the data to avoid reference issues - using the proper way to copy Uint8Array
+      const spectrogramDataCopy = new Uint8Array(this.spectrogramData.length);
+      spectrogramDataCopy.set(this.spectrogramData);
+      
+      // Debug info
+      console.log(`Spectrogram data: length=${spectrogramDataCopy.length}, non-zero=${spectrogramDataCopy.some(v => v > 0)}`);
+      
+      // Send to visualizer
+      this.config.onSpectrogramData(spectrogramDataCopy);
       
       // Get time domain data for waveform
       this.analyserNode.getByteTimeDomainData(this.waveformData);
-      this.config.onWaveformData(this.waveformData);
+      
+      // Create a copy of the data to avoid reference issues - using the proper way to copy Uint8Array
+      const waveformDataCopy = new Uint8Array(this.waveformData.length);
+      waveformDataCopy.set(this.waveformData);
+      
+      // Debug info
+      console.log(`Waveform data: length=${waveformDataCopy.length}, non-zero=${waveformDataCopy.some(v => v !== 128)}`);
+      
+      // Send to visualizer
+      this.config.onWaveformData(waveformDataCopy);
       
       // Detect sounds
       this.detectSounds();

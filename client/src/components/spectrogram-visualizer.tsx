@@ -10,6 +10,14 @@ export default function SpectrogramVisualizer({ spectrogramData }: SpectrogramVi
   useEffect(() => {
     if (!canvasRef.current) return;
     
+    // Debug what data we're receiving
+    if (spectrogramData) {
+      console.log(`Spectrogram data received, length: ${spectrogramData.length}, 
+        sample values: ${spectrogramData[0]}, ${spectrogramData[1]}, ${spectrogramData[2]}`);
+    } else {
+      console.log('No spectrogram data received');
+    }
+    
     const canvas = canvasRef.current;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
@@ -70,15 +78,19 @@ export default function SpectrogramVisualizer({ spectrogramData }: SpectrogramVi
         }
       };
       
+      // Amplify values for better visualization
+      const amplifyData = (value: number) => Math.min(255, value * 1.5);
+      
       for (let i = 0; i < relevantBins; i++) {
         // Apply a logarithmic scale to better visualize the full range
-        const logValue = Math.log10(spectrogramData[i] + 1) * 80;
+        const amplifiedValue = amplifyData(spectrogramData[i]);
+        const logValue = Math.log10(amplifiedValue + 1) * 80;
         const barHeight = Math.min(height, (logValue / 255) * height);
         const x = i * barWidth;
         const y = height - barHeight;
         
         // Use color based on intensity
-        ctx.fillStyle = getIntensityColor(spectrogramData[i]);
+        ctx.fillStyle = getIntensityColor(amplifiedValue);
         ctx.fillRect(x, y, barWidth, barHeight);
       }
     } else {

@@ -38,33 +38,7 @@ export function useAudioAnalyzer() {
   const lastSoundTimeRef = useRef<number | null>(null);
   const intervalHistoryRef = useRef<number[]>([]);
   
-  // Initialize audio processor
-  useEffect(() => {
-    audioProcessorRef.current = new AudioProcessor({
-      onSpectrogramData: setSpectrogramData,
-      onWaveformData: setWaveformData,
-      onSoundDetected: handleSoundDetected
-    });
-    
-    return () => {
-      stopRecording();
-      audioProcessorRef.current?.dispose();
-    };
-  }, []);
-  
-  // Handle sound detection
-  const handleSoundDetected = (sound: DetectedSound) => {
-    // Update visualization data
-    setDetectedSounds(prev => {
-      const newDetectedSounds = [...prev, sound];
-      return newDetectedSounds.length > 20 ? newDetectedSounds.slice(-20) : newDetectedSounds;
-    });
-    
-    // Process measurement calculations
-    calculateMeasurement(sound);
-  };
-  
-  // Calculate measurement from detected sound
+  // Calculate measurement from detected sound - define this first to avoid circular dependency
   const calculateMeasurement = (sound: DetectedSound) => {
     const currentTime = sound.timestamp;
     
@@ -110,6 +84,73 @@ export function useAudioAnalyzer() {
     // Update last sound time for next calculation
     lastSoundTimeRef.current = currentTime;
   };
+  
+  // Define sound detection handler
+  const handleSoundDetected = (sound: DetectedSound) => {
+    // Update visualization data
+    setDetectedSounds(prev => {
+      const newDetectedSounds = [...prev, sound];
+      return newDetectedSounds.length > 20 ? newDetectedSounds.slice(-20) : newDetectedSounds;
+    });
+    
+    // Process measurement calculations
+    calculateMeasurement(sound);
+  };
+  
+  // Initialize audio processor
+  useEffect(() => {
+    // Create explicit handler functions to ensure data is properly set in state
+    const handleSpectrogramData = (data: Uint8Array) => {
+      // Check if data is valid
+      if (!data || data.length === 0) {
+        console.error("Received empty spectrogram data");
+        return;
+      }
+
+      // Verify data has non-zero content
+      const hasContent = data.some(v => v > 0);
+      console.log(`Setting spectrogram data, length: ${data.length}, has content: ${hasContent}`);
+      
+      // Only update state if we have valid data
+      if (hasContent) {
+        // Create a new array to ensure state update
+        const newData = new Uint8Array(data.length);
+        newData.set(data);
+        setSpectrogramData(newData);
+      }
+    };
+    
+    const handleWaveformData = (data: Uint8Array) => {
+      // Check if data is valid
+      if (!data || data.length === 0) {
+        console.error("Received empty waveform data");
+        return;
+      }
+
+      // Verify data has variation (not all 128)
+      const hasVariation = data.some(v => v !== 128);
+      console.log(`Setting waveform data, length: ${data.length}, has variation: ${hasVariation}`);
+      
+      // Only update state if we have valid data
+      if (hasVariation) {
+        // Create a new array to ensure state update
+        const newData = new Uint8Array(data.length);
+        newData.set(data);
+        setWaveformData(newData);
+      }
+    };
+    
+    audioProcessorRef.current = new AudioProcessor({
+      onSpectrogramData: handleSpectrogramData,
+      onWaveformData: handleWaveformData,
+      onSoundDetected: handleSoundDetected
+    });
+    
+    return () => {
+      stopRecording();
+      audioProcessorRef.current?.dispose();
+    };
+  }, []);
   
   // Update threshold when changed
   useEffect(() => {

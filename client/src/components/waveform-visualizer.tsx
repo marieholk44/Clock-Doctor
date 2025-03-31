@@ -15,6 +15,14 @@ export default function WaveformVisualizer({
   useEffect(() => {
     if (!canvasRef.current) return;
     
+    // Debug what data we're receiving
+    if (waveformData) {
+      console.log(`Waveform data received, length: ${waveformData.length}, 
+        sample values: ${waveformData[0]}, ${waveformData[1]}, ${waveformData[2]}`);
+    } else {
+      console.log('No waveform data received');
+    }
+    
     const canvas = canvasRef.current;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
@@ -43,10 +51,14 @@ export default function WaveformVisualizer({
       ctx.lineWidth = 2;
       ctx.beginPath();
       
-      const sliceWidth = width / waveformData.length;
+      // Take a reasonable number of points to display
+      const pointsToDisplay = Math.min(waveformData.length, 1024);
+      const step = Math.floor(waveformData.length / pointsToDisplay) || 1;
+      const sliceWidth = width / (pointsToDisplay);
+      
       let x = 0;
       
-      for (let i = 0; i < waveformData.length; i++) {
+      for (let i = 0; i < waveformData.length; i += step) {
         // Convert from [0, 255] to [-1, 1] for proper centering
         const normalized = (waveformData[i] / 128.0) - 1;
         
@@ -72,6 +84,12 @@ export default function WaveformVisualizer({
       ctx.moveTo(0, height / 2);
       ctx.lineTo(width, height / 2);
       ctx.stroke();
+      
+      // Add placeholder text
+      ctx.fillStyle = 'rgba(148, 163, 184, 0.7)'; // slate-400 with transparency
+      ctx.font = '14px system-ui, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('Waiting for audio...', width / 2, height / 2 - 20);
     }
   }, [waveformData]);
 
