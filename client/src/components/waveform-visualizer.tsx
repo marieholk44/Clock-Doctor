@@ -19,7 +19,7 @@ export default function WaveformVisualizer({
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
     
-    // Set canvas dimensions
+    // Set canvas dimensions - important to get correct rendering
     const width = canvas.offsetWidth;
     const height = canvas.offsetHeight;
     canvas.width = width;
@@ -47,7 +47,12 @@ export default function WaveformVisualizer({
       let x = 0;
       
       for (let i = 0; i < waveformData.length; i++) {
-        const y = (waveformData[i] / 128.0) * (height / 2);
+        // Convert from [0, 255] to [-1, 1] for proper centering
+        const normalized = (waveformData[i] / 128.0) - 1;
+        
+        // Note the inverted y-axis (canvas y increases downward)
+        // and the centering around the middle of the canvas
+        const y = (height / 2) * (1 - normalized);
         
         if (i === 0) {
           ctx.moveTo(x, y);
@@ -58,6 +63,14 @@ export default function WaveformVisualizer({
         x += sliceWidth;
       }
       
+      ctx.stroke();
+    } else {
+      // Draw a flat line in the middle if no data
+      ctx.strokeStyle = '#60a5fa80'; // blue-400 with transparency 
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.moveTo(0, height / 2);
+      ctx.lineTo(width, height / 2);
       ctx.stroke();
     }
   }, [waveformData]);

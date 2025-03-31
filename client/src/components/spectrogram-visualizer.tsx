@@ -8,7 +8,7 @@ export default function SpectrogramVisualizer({ spectrogramData }: SpectrogramVi
   const canvasRef = useRef<HTMLCanvasElement>(null);
   
   useEffect(() => {
-    if (!canvasRef.current || !spectrogramData) return;
+    if (!canvasRef.current) return;
     
     const canvas = canvasRef.current;
     const ctx = canvas.getContext('2d');
@@ -46,29 +46,62 @@ export default function SpectrogramVisualizer({ spectrogramData }: SpectrogramVi
     
     // Draw frequency data
     if (spectrogramData && spectrogramData.length > 0) {
-      const barWidth = width / spectrogramData.length;
+      // Only display a subset focused on clock-relevant frequencies
+      // Most mechanical clock sounds are in the 300-2000Hz range
+      const relevantBins = Math.min(spectrogramData.length, 256);
+      const barWidth = width / relevantBins;
       
-      for (let i = 0; i < spectrogramData.length; i++) {
-        const barHeight = (spectrogramData[i] / 255) * height;
+      // Use a color scheme that highlights intensity
+      const getIntensityColor = (value: number) => {
+        // Normalize the value between 0 and 1
+        const normalized = Math.min(1, value / 200);
+        
+        // Create a blue-to-white color scheme
+        if (normalized < 0.3) {
+          return `rgba(30, 64, 175, ${normalized * 2})`; // Dim blue (blue-800)
+        } else if (normalized < 0.6) {
+          return `rgba(59, 130, 246, ${normalized * 1.5})`; // Medium blue (blue-500)
+        } else {
+          // Transition to white for high intensity
+          const r = Math.min(255, 59 + (196 * (normalized - 0.6) / 0.4));
+          const g = Math.min(255, 130 + (125 * (normalized - 0.6) / 0.4));
+          const b = 246;
+          return `rgba(${r}, ${g}, ${b}, 1)`;
+        }
+      };
+      
+      for (let i = 0; i < relevantBins; i++) {
+        // Apply a logarithmic scale to better visualize the full range
+        const logValue = Math.log10(spectrogramData[i] + 1) * 80;
+        const barHeight = Math.min(height, (logValue / 255) * height);
         const x = i * barWidth;
         const y = height - barHeight;
         
-        // Create gradient for frequency visualization
-        const gradient = ctx.createLinearGradient(0, y, 0, height);
-        gradient.addColorStop(0, 'rgba(59, 130, 246, 0.9)'); // blue-500
-        gradient.addColorStop(0.5, 'rgba(59, 130, 246, 0.5)');
-        gradient.addColorStop(1, 'rgba(59, 130, 246, 0)');
-        
-        ctx.fillStyle = gradient;
+        // Use color based on intensity
+        ctx.fillStyle = getIntensityColor(spectrogramData[i]);
         ctx.fillRect(x, y, barWidth, barHeight);
       }
+    } else {
+      // Draw placeholder gradient when no data
+      const gradient = ctx.createLinearGradient(0, 0, 0, height);
+      gradient.addColorStop(0, 'rgba(30, 58, 138, 0.1)'); // Very faint blue
+      gradient.addColorStop(1, 'rgba(30, 58, 138, 0.4)'); // Slightly more visible at bottom
+      
+      ctx.fillStyle = gradient;
+      ctx.fillRect(0, 0, width, height);
+      
+      // Add placeholder text
+      ctx.fillStyle = 'rgba(148, 163, 184, 0.7)'; // slate-400 with transparency
+      ctx.font = '14px system-ui, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('Waiting for audio...', width / 2, height / 2);
     }
   }, [spectrogramData]);
 
   return (
     <div className="bg-slate-800 rounded-lg p-6 shadow-lg">
       <h2 className="text-xl font-semibold mb-4 text-white flex items-center">
-        <span className="material-icons mr-2">equalizer</span>
+        <span className="mr-2">🔊</span>
         Spectrogram
       </h2>
       
