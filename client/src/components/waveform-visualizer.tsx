@@ -83,8 +83,8 @@ export default function WaveformVisualizer({
   return (
     <div className="bg-slate-800 rounded-lg p-6 shadow-lg">
       <h2 className="text-xl font-semibold mb-4 text-white flex items-center">
-        <span className="material-icons mr-2">waves</span>
-        Waveform &amp; Timing
+        <span className="mr-2">📊</span>
+        Waveform &amp; Detected Sounds
       </h2>
       
       <div className="relative">
@@ -99,9 +99,9 @@ export default function WaveformVisualizer({
             className="absolute" 
             style={getMarkerPosition(sound.timestamp, 3)}
           >
-            <div className={`h-5 w-5 ${sound.type === 'tick' ? 'bg-blue-500/30 border border-blue-500' : 'bg-green-500/30 border border-green-500'} rounded-full flex items-center justify-center`}>
+            <div className="h-5 w-5 bg-blue-500/30 border border-blue-500 rounded-full flex items-center justify-center">
               <span className="text-[10px] font-bold">
-                {sound.type === 'tick' ? 'T' : 'K'}
+                {index + 1}
               </span>
             </div>
           </div>

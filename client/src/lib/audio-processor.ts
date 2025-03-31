@@ -1,5 +1,5 @@
 export interface DetectedSound {
-  type: "tick" | "tock";
+  type: "pulse"; // Using a single type for all clock sounds (no distinction needed)
   timestamp: number;
   magnitude: number;
 }
@@ -20,8 +20,8 @@ export class AudioProcessor {
   private waveformData: Uint8Array = new Uint8Array();
   private detectionThreshold: number = 0.2;  // Lower default threshold (20%)
   private noiseReduction: number = 0.2;      // Lower noise reduction (20%)
-  private lastSoundType: "tick" | "tock" | null = null;
-  private lastTickTime: number = 0;
+  // We're using a single pulse type for all sounds now
+  private lastPulseTime: number = 0;
   private config: AudioProcessorConfig;
   private animationFrameId: number | null = null;
   private minTimeBetweenSounds: number = 100; // Min time between sounds in ms (increased for clock timing)
@@ -81,8 +81,7 @@ export class AudioProcessor {
       this.startAnalysisLoop();
       
       // Reset state
-      this.lastSoundType = null;
-      this.lastTickTime = 0;
+      this.lastPulseTime = 0;
       this.lastSoundTime = 0;
       
     } catch (error) {
@@ -211,48 +210,15 @@ export class AudioProcessor {
       // Log sound detection for debugging
       console.log(`Sound detected! Amplitude: ${effectiveAmplitude.toFixed(3)}, Threshold: ${effectiveThreshold.toFixed(3)}`);
       
-      // Spectral analysis to determine if it's tick or tock
-      // Typically tick sounds have more high frequency content than tock sounds
-      let highFrequencyEnergy = 0;
-      let lowFrequencyEnergy = 0;
+      // We don't need to distinguish between tick and tock anymore
+      // Just treat each detected sound as a pulse
       
-      // Simple spectral analysis using FFT data
-      if (this.spectrogramData) {
-        const midpoint = Math.floor(this.spectrogramData.length / 2);
-        
-        for (let i = 0; i < midpoint; i++) {
-          lowFrequencyEnergy += this.spectrogramData[i];
-        }
-        
-        for (let i = midpoint; i < this.spectrogramData.length; i++) {
-          highFrequencyEnergy += this.spectrogramData[i];
-        }
-      }
-      
-      // Determine sound type more intelligently
-      let soundType: "tick" | "tock";
-      
-      if (this.lastSoundType === null) {
-        // First sound is always a tick by convention
-        soundType = "tick";
-      } else if (this.lastSoundType === "tick") {
-        // After a tick comes a tock
-        soundType = "tock";
-      } else {
-        // After a tock comes a tick
-        soundType = "tick";
-      }
-      
-      // Update last sound info
-      this.lastSoundType = soundType;
+      // Update last sound time
       this.lastSoundTime = now;
-      if (soundType === "tick") {
-        this.lastTickTime = now;
-      }
       
-      // Create the detected sound object
+      // Create the detected sound object - all sounds are just "pulse" type now
       const detectedSound: DetectedSound = {
-        type: soundType,
+        type: "pulse",
         timestamp: now / 1000, // Convert to seconds for easier calculations
         magnitude: effectiveAmplitude
       };

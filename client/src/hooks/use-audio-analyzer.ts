@@ -2,11 +2,12 @@ import { useState, useEffect, useRef } from "react";
 import { useAudioDevices } from "./use-audio-devices";
 import { AudioProcessor, DetectedSound } from "@/lib/audio-processor";
 
+// Interface for measurement data - consecutive sound intervals
 export interface Measurement {
-  time: string;
-  tickToTock: number;
-  tockToTick: number;
-  fullCycle: number;
+  time: string;         // Time of the measurement display (HH:MM:SS format)
+  intervalMs: number;   // Time between consecutive sounds in milliseconds
+  frequency: number;    // Calculated beats per minute
+  deviation: number;    // Deviation from the average interval (as a percentage)
 }
 
 export function useAudioAnalyzer() {
@@ -34,24 +35,15 @@ export function useAudioAnalyzer() {
   const startTimeRef = useRef<number>(0);
   const timerIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const recordingStartTime = useRef<number>(0);
+  const lastSoundTimeRef = useRef<number | null>(null);
+  const intervalHistoryRef = useRef<number[]>([]);
   
   // Initialize audio processor
   useEffect(() => {
     audioProcessorRef.current = new AudioProcessor({
       onSpectrogramData: setSpectrogramData,
       onWaveformData: setWaveformData,
-      onSoundDetected: (sound) => {
-        setDetectedSounds(prev => {
-          // Keep only the most recent sounds (for visualization)
-          const updatedSounds = [...prev, sound];
-          if (updatedSounds.length > 10) {
-            return updatedSounds.slice(-10);
-          }
-          return updatedSounds;
-        });
-        
-        processMeasurements(sound);
-      }
+      onSoundDetected: handleSoundDetected
     });
     
     return () => {
@@ -59,6 +51,65 @@ export function useAudioAnalyzer() {
       audioProcessorRef.current?.dispose();
     };
   }, []);
+  
+  // Handle sound detection
+  const handleSoundDetected = (sound: DetectedSound) => {
+    // Update visualization data
+    setDetectedSounds(prev => {
+      const newDetectedSounds = [...prev, sound];
+      return newDetectedSounds.length > 20 ? newDetectedSounds.slice(-20) : newDetectedSounds;
+    });
+    
+    // Process measurement calculations
+    calculateMeasurement(sound);
+  };
+  
+  // Calculate measurement from detected sound
+  const calculateMeasurement = (sound: DetectedSound) => {
+    const currentTime = sound.timestamp;
+    
+    // If we have a previous sound to compare against
+    if (lastSoundTimeRef.current !== null) {
+      // Calculate interval in milliseconds
+      const intervalMs = (currentTime - lastSoundTimeRef.current) * 1000;
+      
+      // Only process reasonable intervals (filter out noise)
+      if (intervalMs > 100) { // Minimum 100ms between clock sounds
+        // Add to interval history, keeping most recent 10
+        intervalHistoryRef.current = [...intervalHistoryRef.current, intervalMs].slice(-10);
+        
+        // Calculate average interval for deviation calculation
+        const avgInterval = intervalHistoryRef.current.reduce((sum, val) => sum + val, 0) / 
+                            intervalHistoryRef.current.length;
+        
+        // Calculate frequency in beats per minute
+        const frequency = 60000 / intervalMs;
+        
+        // Calculate deviation as percentage from average
+        const deviation = ((intervalMs - avgInterval) / avgInterval) * 100;
+        
+        // Format current recording time for display
+        const elapsedSecs = Math.floor((Date.now() - recordingStartTime.current) / 1000);
+        const hours = Math.floor(elapsedSecs / 3600).toString().padStart(2, '0');
+        const minutes = Math.floor((elapsedSecs % 3600) / 60).toString().padStart(2, '0');
+        const seconds = (elapsedSecs % 60).toString().padStart(2, '0');
+        const timeString = `${hours}:${minutes}:${seconds}`;
+        
+        // Create measurement and add to state
+        const measurement: Measurement = {
+          time: timeString,
+          intervalMs: Math.round(intervalMs),
+          frequency: Math.round(frequency * 10) / 10, // Round to 1 decimal place
+          deviation: Math.round(deviation * 10) / 10, // Round to 1 decimal place
+        };
+        
+        setMeasurements(prev => [...prev, measurement]);
+      }
+    }
+    
+    // Update last sound time for next calculation
+    lastSoundTimeRef.current = currentTime;
+  };
   
   // Update threshold when changed
   useEffect(() => {
@@ -74,63 +125,24 @@ export function useAudioAnalyzer() {
     }
   }, [noiseReduction]);
   
-  // Process sound detections into measurements
-  const processMeasurements = (sound: DetectedSound) => {
-    // Keep track of sounds for measurement
-    setDetectedSounds(prev => {
-      const newDetectedSounds = [...prev, sound];
-      
-      // Process measurements if we have enough sounds
-      if (newDetectedSounds.length >= 3) {
-        // Look for a sequence of tick-tock-tick
-        let i = newDetectedSounds.length - 3;
-        
-        if (
-          newDetectedSounds[i].type === 'tick' &&
-          newDetectedSounds[i + 1].type === 'tock' &&
-          newDetectedSounds[i + 2].type === 'tick'
-        ) {
-          const tickTime1 = newDetectedSounds[i].timestamp;
-          const tockTime = newDetectedSounds[i + 1].timestamp;
-          const tickTime2 = newDetectedSounds[i + 2].timestamp;
-          
-          const tickToTock = tockTime - tickTime1;
-          const tockToTick = tickTime2 - tockTime;
-          const fullCycle = tickTime2 - tickTime1;
-          
-          // Format the time for display
-          const seconds = Math.floor((Date.now() - recordingStartTime.current) / 1000);
-          const hours = Math.floor(seconds / 3600).toString().padStart(2, '0');
-          const minutes = Math.floor((seconds % 3600) / 60).toString().padStart(2, '0');
-          const secs = (seconds % 60).toString().padStart(2, '0');
-          const time = `${hours}:${minutes}:${secs}`;
-          
-          setMeasurements(prev => [
-            ...prev,
-            { time, tickToTock, tockToTick, fullCycle }
-          ]);
-        }
-      }
-      
-      // Keep a reasonable number of detected sounds for visualization
-      if (newDetectedSounds.length > 20) {
-        return newDetectedSounds.slice(-20);
-      }
-      return newDetectedSounds;
-    });
-  };
-  
   // Start recording
   const startRecording = async () => {
     if (audioProcessorRef.current) {
       try {
         await audioProcessorRef.current.startRecording(selectedDeviceId);
         
+        // Reset all recording state
         setRecording(true);
         setDetectedSounds([]);
-        resetTimer();
+        setMeasurements([]);
         
+        // Reset refs
+        lastSoundTimeRef.current = null;
+        intervalHistoryRef.current = [];
         recordingStartTime.current = Date.now();
+        
+        // Start the timer
+        resetTimer();
       } catch (error) {
         console.error("Error starting recording:", error);
       }
@@ -158,7 +170,6 @@ export function useAudioAnalyzer() {
       clearInterval(timerIntervalRef.current);
     }
     
-    // Use the correct type for the interval
     timerIntervalRef.current = setInterval(() => {
       const elapsedSeconds = Math.floor((Date.now() - startTimeRef.current) / 1000);
       const hours = Math.floor(elapsedSeconds / 3600).toString().padStart(2, '0');
