@@ -138,37 +138,43 @@ export default function TimingAnalysis({ measurements }: TimingAnalysisProps) {
         </div>
       </div>
       
-      <div className="mt-4">
-        <h3 className="text-sm font-medium text-slate-300 mb-2">Sequential Interval Comparison</h3>
-        <div className="overflow-x-auto rounded-md">
-          <table className="min-w-full bg-slate-700 text-sm">
+      {/* Sequential Interval Comparison - Make it more prominent */}
+      <div className="bg-slate-700 rounded-lg p-4 shadow-inner border-l-4 border-blue-500">
+        <div className="mb-2">
+          <h3 className="text-lg font-semibold text-blue-300">Sequential Interval Comparison</h3>
+          <p className="text-xs text-slate-400 mt-1">Compare each tick/tock interval with the previous one to identify drift patterns</p>
+        </div>
+        <div className="overflow-x-auto rounded-md mt-3">
+          <table className="min-w-full bg-slate-800 text-sm">
             <thead>
-              <tr className="bg-slate-600 text-left">
+              <tr className="bg-slate-700 text-left border-b border-slate-600">
                 <th className="py-2 px-3">#</th>
                 <th className="py-2 px-3">Time</th>
-                <th className="py-2 px-3">Interval</th>
-                <th className="py-2 px-3">Prev. Interval</th>
-                <th className="py-2 px-3">Change</th>
+                <th className="py-2 px-3 text-blue-300">Current</th>
+                <th className="py-2 px-3 text-indigo-300">Previous</th>
+                <th className="py-2 px-3 text-yellow-300">Change</th>
                 <th className="py-2 px-3">Stability</th>
               </tr>
             </thead>
             <tbody>
               {measurements.length === 0 ? (
                 <tr className="border-t border-slate-600 text-slate-300">
-                  <td colSpan={6} className="py-2 px-3 text-center">No measurements recorded</td>
+                  <td colSpan={6} className="py-4 px-3 text-center">No measurements recorded yet. Start recording to see interval comparisons.</td>
                 </tr>
               ) : (
                 measurements.slice(-5).map((measurement, index) => (
-                  <tr key={index} className="border-t border-slate-600 text-slate-300 font-mono">
-                    <td className="py-2 px-3">{measurements.length - 5 + index + 1}</td>
-                    <td className="py-2 px-3">{measurement.time}</td>
-                    <td className="py-2 px-3 text-blue-400">{(measurement.intervalMs / 1000).toFixed(3)}s</td>
-                    <td className="py-2 px-3 text-indigo-300">
+                  <tr key={index} className={`border-t border-slate-600 text-slate-300 font-mono ${
+                    index === measurements.slice(-5).length - 1 ? 'bg-slate-700/30' : ''
+                  }`}>
+                    <td className="py-3 px-3">{measurements.length - 5 + index + 1}</td>
+                    <td className="py-3 px-3">{measurement.time}</td>
+                    <td className="py-3 px-3 text-blue-400 font-bold">{(measurement.intervalMs / 1000).toFixed(3)}s</td>
+                    <td className="py-3 px-3 text-indigo-300">
                       {measurement.previousIntervalMs 
                         ? (measurement.previousIntervalMs / 1000).toFixed(3) + 's'
                         : '-'}
                     </td>
-                    <td className={`py-2 px-3 ${
+                    <td className={`py-3 px-3 font-bold ${
                       measurement.changeFromPrevious === undefined 
                         ? 'text-gray-400' 
                         : Math.abs(measurement.changeFromPrevious) < 1 
@@ -182,17 +188,17 @@ export default function TimingAnalysis({ measurements }: TimingAnalysisProps) {
                           measurement.changeFromPrevious.toFixed(1) + '%'
                         : '-'}
                     </td>
-                    <td className="py-2 px-3">
+                    <td className="py-3 px-3">
                       {measurement.changeFromPrevious === undefined ? (
                         <span className="text-gray-400">-</span>
                       ) : Math.abs(measurement.changeFromPrevious) < 1 ? (
-                        <span className="text-green-400">Consistent</span>
+                        <span className="text-green-400 font-medium">✓ Consistent</span>
                       ) : Math.abs(measurement.changeFromPrevious) < 3 ? (
-                        <span className="text-amber-400">Minor Drift</span>
+                        <span className="text-amber-400 font-medium">⚠️ Minor Drift</span>
                       ) : Math.abs(measurement.changeFromPrevious) < 5 ? (
-                        <span className="text-orange-400">Significant</span>
+                        <span className="text-orange-400 font-medium">⚠️ Significant</span>
                       ) : (
-                        <span className="text-red-400">Unstable</span>
+                        <span className="text-red-400 font-medium">❌ Unstable</span>
                       )}
                     </td>
                   </tr>
@@ -201,6 +207,18 @@ export default function TimingAnalysis({ measurements }: TimingAnalysisProps) {
             </tbody>
           </table>
         </div>
+        
+        {measurements.length > 0 && (
+          <div className="mt-3 text-xs text-slate-400 flex justify-between items-center">
+            <span className="italic">Last {Math.min(measurements.length, 5)} measurements shown</span>
+            
+            <div className="flex gap-4">
+              <span className="text-green-400">✓ &lt;1% = Excellent</span>
+              <span className="text-amber-400">⚠️ 1-3% = Minor Issue</span>
+              <span className="text-red-400">❌ &gt;5% = Needs Repair</span>
+            </div>
+          </div>
+        )}
       </div>
       
       <div className="mt-4">

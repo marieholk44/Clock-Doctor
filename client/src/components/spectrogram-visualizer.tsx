@@ -162,20 +162,27 @@ export default function SpectrogramVisualizer({ spectrogramData }: SpectrogramVi
   }, [spectrogramData]);
 
   return (
-    <div className="bg-slate-800 rounded-lg p-6 shadow-lg">
-      <h2 className="text-xl font-semibold mb-4 text-white flex items-center">
-        <span className="mr-2">🔊</span>
-        Spectrogram <span className="ml-2 text-sm font-normal text-slate-400">(extended time view)</span>
-      </h2>
-      
-      <div className="relative">
+    <div className="w-full h-full">
+      <div className="relative h-full">
         <canvas 
           ref={canvasRef} 
-          className="w-full h-48 bg-slate-900 rounded-md"
+          className="w-full h-full bg-slate-900 rounded-md"
         />
         
         <div className="absolute bottom-2 right-2 bg-slate-800/80 text-xs text-slate-300 px-2 py-1 rounded">
           <span>0 - 2000 Hz</span>
+        </div>
+        
+        <div className="absolute top-2 left-2 bg-slate-800/80 text-xs text-slate-300 px-2 py-1 rounded">
+          <span className="text-blue-400 font-medium">past</span>
+          <span className="mx-2">←</span>
+          <span className="text-white font-medium">Time</span>
+          <span className="mx-2">→</span>
+          <span className="text-blue-400 font-medium">now</span>
+        </div>
+        
+        <div className="absolute top-2 right-2 bg-blue-900/60 text-xs text-white px-2 py-1 rounded">
+          <span>7.5 second window</span>
         </div>
       </div>
       

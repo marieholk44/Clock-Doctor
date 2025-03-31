@@ -50,17 +50,36 @@ export default function Home() {
           />
           
           <div className="lg:col-span-2 space-y-6">
-            <SpectrogramVisualizer 
-              spectrogramData={spectrogramData}
-            />
+            {/* Make the spectrogram larger */}
+            <div className="bg-slate-800 rounded-lg p-6 shadow-lg">
+              <h2 className="text-2xl font-bold mb-4 text-white flex items-center">
+                <span className="mr-2">🔊</span>
+                Extended Time Spectrogram
+                <span className="ml-3 text-sm font-normal text-slate-400">(View multiple intervals at once)</span>
+              </h2>
+              <div className="h-64"> {/* Increased height for better visibility */}
+                <SpectrogramVisualizer 
+                  spectrogramData={spectrogramData}
+                />
+              </div>
+            </div>
             
+            {/* Extract timing analysis component and place at top */}
+            <div className="bg-slate-800 rounded-lg p-6 shadow-lg border-2 border-blue-500">
+              <h2 className="text-2xl font-bold mb-4 text-white flex items-center">
+                <span className="mr-2">⏱️</span>
+                Sequential Interval Comparison
+                <span className="ml-3 text-sm font-normal text-blue-400">(Highlighted for importance)</span>
+              </h2>
+              <TimingAnalysis 
+                measurements={measurements}
+              />
+            </div>
+            
+            {/* Move waveform visualizer last */}
             <WaveformVisualizer 
               waveformData={waveformData}
               detectedSounds={detectedSounds}
-            />
-            
-            <TimingAnalysis 
-              measurements={measurements}
             />
           </div>
         </main>
