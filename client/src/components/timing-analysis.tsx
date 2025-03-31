@@ -139,7 +139,7 @@ export default function TimingAnalysis({ measurements }: TimingAnalysisProps) {
       </div>
       
       <div className="mt-4">
-        <h3 className="text-sm font-medium text-slate-300 mb-2">Recent Measurements</h3>
+        <h3 className="text-sm font-medium text-slate-300 mb-2">Sequential Interval Comparison</h3>
         <div className="overflow-x-auto rounded-md">
           <table className="min-w-full bg-slate-700 text-sm">
             <thead>
@@ -147,14 +147,15 @@ export default function TimingAnalysis({ measurements }: TimingAnalysisProps) {
                 <th className="py-2 px-3">#</th>
                 <th className="py-2 px-3">Time</th>
                 <th className="py-2 px-3">Interval</th>
-                <th className="py-2 px-3">Frequency</th>
-                <th className="py-2 px-3">Deviation</th>
+                <th className="py-2 px-3">Prev. Interval</th>
+                <th className="py-2 px-3">Change</th>
+                <th className="py-2 px-3">Stability</th>
               </tr>
             </thead>
             <tbody>
               {measurements.length === 0 ? (
                 <tr className="border-t border-slate-600 text-slate-300">
-                  <td colSpan={5} className="py-2 px-3 text-center">No measurements recorded</td>
+                  <td colSpan={6} className="py-2 px-3 text-center">No measurements recorded</td>
                 </tr>
               ) : (
                 measurements.slice(-5).map((measurement, index) => (
@@ -162,6 +163,71 @@ export default function TimingAnalysis({ measurements }: TimingAnalysisProps) {
                     <td className="py-2 px-3">{measurements.length - 5 + index + 1}</td>
                     <td className="py-2 px-3">{measurement.time}</td>
                     <td className="py-2 px-3 text-blue-400">{(measurement.intervalMs / 1000).toFixed(3)}s</td>
+                    <td className="py-2 px-3 text-indigo-300">
+                      {measurement.previousIntervalMs 
+                        ? (measurement.previousIntervalMs / 1000).toFixed(3) + 's'
+                        : '-'}
+                    </td>
+                    <td className={`py-2 px-3 ${
+                      measurement.changeFromPrevious === undefined 
+                        ? 'text-gray-400' 
+                        : Math.abs(measurement.changeFromPrevious) < 1 
+                          ? 'text-green-400'
+                          : Math.abs(measurement.changeFromPrevious) < 3
+                            ? 'text-amber-400'
+                            : 'text-red-400'
+                    }`}>
+                      {measurement.changeFromPrevious !== undefined 
+                        ? (measurement.changeFromPrevious > 0 ? '+' : '') + 
+                          measurement.changeFromPrevious.toFixed(1) + '%'
+                        : '-'}
+                    </td>
+                    <td className="py-2 px-3">
+                      {measurement.changeFromPrevious === undefined ? (
+                        <span className="text-gray-400">-</span>
+                      ) : Math.abs(measurement.changeFromPrevious) < 1 ? (
+                        <span className="text-green-400">Consistent</span>
+                      ) : Math.abs(measurement.changeFromPrevious) < 3 ? (
+                        <span className="text-amber-400">Minor Drift</span>
+                      ) : Math.abs(measurement.changeFromPrevious) < 5 ? (
+                        <span className="text-orange-400">Significant</span>
+                      ) : (
+                        <span className="text-red-400">Unstable</span>
+                      )}
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+      
+      <div className="mt-4">
+        <h3 className="text-sm font-medium text-slate-300 mb-2">
+          <span className="mr-2">📈</span>
+          Measurement Details
+        </h3>
+        <div className="overflow-x-auto rounded-md">
+          <table className="min-w-full bg-slate-700 text-sm">
+            <thead>
+              <tr className="bg-slate-600 text-left">
+                <th className="py-2 px-3">#</th>
+                <th className="py-2 px-3">Time</th>
+                <th className="py-2 px-3">Frequency</th>
+                <th className="py-2 px-3">Deviation</th>
+              </tr>
+            </thead>
+            <tbody>
+              {measurements.length === 0 ? (
+                <tr className="border-t border-slate-600 text-slate-300">
+                  <td colSpan={4} className="py-2 px-3 text-center">No measurements recorded</td>
+                </tr>
+              ) : (
+                measurements.slice(-5).map((measurement, index) => (
+                  <tr key={index} className="border-t border-slate-600 text-slate-300 font-mono">
+                    <td className="py-2 px-3">{measurements.length - 5 + index + 1}</td>
+                    <td className="py-2 px-3">{measurement.time}</td>
                     <td className="py-2 px-3 text-green-400">{measurement.frequency.toFixed(1)} BPM</td>
                     <td className={`py-2 px-3 ${Math.abs(measurement.deviation) > 5 ? 'text-red-400' : 'text-amber-400'}`}>
                       {measurement.deviation > 0 ? '+' : ''}{measurement.deviation.toFixed(1)}%

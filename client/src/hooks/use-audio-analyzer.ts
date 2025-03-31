@@ -8,6 +8,9 @@ export interface Measurement {
   intervalMs: number;   // Time between consecutive sounds in milliseconds
   frequency: number;    // Calculated beats per minute
   deviation: number;    // Deviation from the average interval (as a percentage)
+  // Add comparison to previous interval
+  previousIntervalMs?: number;  // Previous interval for comparison
+  changeFromPrevious?: number;  // Change from previous interval (percentage)
 }
 
 export function useAudioAnalyzer() {
@@ -49,6 +52,19 @@ export function useAudioAnalyzer() {
       
       // Only process reasonable intervals (filter out noise)
       if (intervalMs > 100) { // Minimum 100ms between clock sounds
+        // Get latest measurements for comparison to previous interval
+        const previousMeasurements = [...measurements];
+        const previousIntervalMs = previousMeasurements.length > 0 
+          ? previousMeasurements[previousMeasurements.length - 1].intervalMs 
+          : undefined;
+        
+        // Calculate change from previous interval (if available)
+        let changeFromPrevious: number | undefined = undefined;
+        if (previousIntervalMs) {
+          changeFromPrevious = ((intervalMs - previousIntervalMs) / previousIntervalMs) * 100;
+          changeFromPrevious = Math.round(changeFromPrevious * 10) / 10; // Round to 1 decimal place
+        }
+        
         // Add to interval history, keeping most recent 10
         intervalHistoryRef.current = [...intervalHistoryRef.current, intervalMs].slice(-10);
         
@@ -75,6 +91,8 @@ export function useAudioAnalyzer() {
           intervalMs: Math.round(intervalMs),
           frequency: Math.round(frequency * 10) / 10, // Round to 1 decimal place
           deviation: Math.round(deviation * 10) / 10, // Round to 1 decimal place
+          previousIntervalMs: previousIntervalMs ? Math.round(previousIntervalMs) : undefined,
+          changeFromPrevious
         };
         
         setMeasurements(prev => [...prev, measurement]);
