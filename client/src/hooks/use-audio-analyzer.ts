@@ -47,11 +47,14 @@ export function useAudioAnalyzer() {
     
     // If we have a previous sound to compare against
     if (lastSoundTimeRef.current !== null) {
-      // Calculate interval in milliseconds
+      // Calculate interval in milliseconds between consecutive sounds
       const intervalMs = (currentTime - lastSoundTimeRef.current) * 1000;
       
       // Only process reasonable intervals (filter out noise)
-      if (intervalMs > 100) { // Minimum 100ms between clock sounds
+      // For clock mechanisms, intervals are typically in the 300ms to 2000ms range
+      // - 100ms lower bound catches high-frequency clock sounds
+      // - Upper bound of 3000ms (3 seconds) handles slow pendulum clocks
+      if (intervalMs > 100 && intervalMs < 3000) {
         // Get latest measurements for comparison to previous interval
         const previousMeasurements = [...measurements];
         const previousIntervalMs = previousMeasurements.length > 0 
@@ -59,6 +62,7 @@ export function useAudioAnalyzer() {
           : undefined;
         
         // Calculate change from previous interval (if available)
+        // This shows the drift between consecutive intervals as a percentage
         let changeFromPrevious: number | undefined = undefined;
         if (previousIntervalMs) {
           changeFromPrevious = ((intervalMs - previousIntervalMs) / previousIntervalMs) * 100;

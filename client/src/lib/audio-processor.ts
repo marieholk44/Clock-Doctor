@@ -314,25 +314,36 @@ export class AudioProcessor {
     const now = Date.now();
     const timeSinceLastSound = now - this.lastSoundTime;
     
+    // Dynamically adjust minimum time between sounds based on previous intervals
+    // This helps prevent false positives and missing pulses
+    const dynamicMinTime = Math.max(100, this.minTimeBetweenSounds * 0.6);
+    
     // Lower effective threshold for better sensitivity
     const effectiveThreshold = this.detectionThreshold * 0.7;
     
-    if (effectiveAmplitude > effectiveThreshold && timeSinceLastSound > this.minTimeBetweenSounds) {
+    // Only detect sound if:
+    // 1. It's louder than our threshold
+    // 2. Enough time has passed since the last sound (prevents double-triggering)
+    if (effectiveAmplitude > effectiveThreshold && timeSinceLastSound > dynamicMinTime) {
       // Log sound detection for debugging
-      console.log(`Sound detected! Amplitude: ${effectiveAmplitude.toFixed(3)}, Threshold: ${effectiveThreshold.toFixed(3)}`);
-      
-      // We don't need to distinguish between tick and tock anymore
-      // Just treat each detected sound as a pulse
+      console.log(`Sound detected! Amplitude: ${effectiveAmplitude.toFixed(3)}, Threshold: ${effectiveThreshold.toFixed(3)}, Time since last: ${timeSinceLastSound}ms`);
       
       // Update last sound time
       this.lastSoundTime = now;
       
-      // Create the detected sound object - all sounds are just "pulse" type now
+      // Create the detected sound object with pulse type
       const detectedSound: DetectedSound = {
         type: "pulse",
         timestamp: now / 1000, // Convert to seconds for easier calculations
         magnitude: effectiveAmplitude
       };
+      
+      // Calculate time in milliseconds for better readability in debug logs
+      const lastPulseInterval = (now - this.lastPulseTime) / 1000;
+      if (this.lastPulseTime > 0) {
+        console.log(`Interval between sounds: ${(lastPulseInterval * 1000).toFixed(0)}ms`);
+      }
+      this.lastPulseTime = now;
       
       // Notify via callback
       this.config.onSoundDetected(detectedSound);

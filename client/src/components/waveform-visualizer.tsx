@@ -113,10 +113,23 @@ export default function WaveformVisualizer({
 
   return (
     <div className="bg-slate-800 rounded-lg p-6 shadow-lg">
-      <h2 className="text-xl font-semibold mb-4 text-white flex items-center">
-        <span className="mr-2">📊</span>
-        Waveform &amp; Detected Sounds
-      </h2>
+      <div className="flex justify-between items-center mb-4">
+        <h2 className="text-xl font-semibold text-white flex items-center">
+          <span className="mr-2">📊</span>
+          Waveform Analysis
+        </h2>
+        
+        <div className="flex gap-4 text-xs text-slate-400">
+          <div className="flex items-center">
+            <div className="h-3 w-3 bg-blue-500/30 border border-blue-500 rounded-full mr-1"></div>
+            <span>Detected Sound Pulse</span>
+          </div>
+          <div className="flex items-center">
+            <div className="h-2 w-4 bg-green-400 mr-1"></div>
+            <span>Measurement Point</span>
+          </div>
+        </div>
+      </div>
       
       <div className="relative">
         <canvas 
@@ -124,16 +137,26 @@ export default function WaveformVisualizer({
           className="w-full h-32 bg-slate-900 rounded-md"
         />
         
+        {/* Sound markers with tooltips */}
         {detectedSounds.map((sound, index) => (
           <div 
             key={index}
             className="absolute" 
             style={getMarkerPosition(sound.timestamp, 3)}
+            title={`Sound ${index + 1}: Timestamp ${sound.timestamp.toFixed(3)}s, Magnitude: ${sound.magnitude.toFixed(2)}`}
           >
-            <div className="h-5 w-5 bg-blue-500/30 border border-blue-500 rounded-full flex items-center justify-center">
+            <div className="h-5 w-5 bg-blue-500/30 border border-blue-500 rounded-full flex items-center justify-center group">
               <span className="text-[10px] font-bold">
                 {index + 1}
               </span>
+              
+              {/* Show interval if we have at least 2 sounds */}
+              {index > 0 && (
+                <div className="absolute bottom-full mb-1 left-1/2 transform -translate-x-1/2 hidden group-hover:block 
+                              bg-slate-700 text-xs text-white p-1 rounded whitespace-nowrap">
+                  {((sound.timestamp - detectedSounds[index - 1].timestamp) * 1000).toFixed(0)} ms
+                </div>
+              )}
             </div>
           </div>
         ))}
@@ -144,6 +167,11 @@ export default function WaveformVisualizer({
         <span>1s</span>
         <span>2s</span>
         <span>3s</span>
+      </div>
+      
+      {/* Explanation text */}
+      <div className="mt-3 text-xs text-slate-400">
+        <p>Visualizes audio waveform and marks each detected sound pulse. Hover over markers to see the interval between consecutive sounds.</p>
       </div>
     </div>
   );

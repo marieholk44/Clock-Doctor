@@ -141,8 +141,8 @@ export default function TimingAnalysis({ measurements }: TimingAnalysisProps) {
       {/* Sequential Interval Comparison - Make it more prominent */}
       <div className="bg-slate-700 rounded-lg p-4 shadow-inner border-l-4 border-blue-500">
         <div className="mb-2">
-          <h3 className="text-lg font-semibold text-blue-300">Sequential Interval Comparison</h3>
-          <p className="text-xs text-slate-400 mt-1">Compare each tick/tock interval with the previous one to identify drift patterns</p>
+          <h3 className="text-lg font-semibold text-blue-300">Sound Interval Analysis</h3>
+          <p className="text-xs text-slate-400 mt-1">Measures time between consecutive sound spikes (tick→tock→tick) in milliseconds</p>
         </div>
         <div className="overflow-x-auto rounded-md mt-3">
           <table className="min-w-full bg-slate-800 text-sm">
@@ -150,8 +150,8 @@ export default function TimingAnalysis({ measurements }: TimingAnalysisProps) {
               <tr className="bg-slate-700 text-left border-b border-slate-600">
                 <th className="py-2 px-3">#</th>
                 <th className="py-2 px-3">Time</th>
-                <th className="py-2 px-3 text-blue-300">Current</th>
-                <th className="py-2 px-3 text-indigo-300">Previous</th>
+                <th className="py-2 px-3 text-blue-300">Interval (ms)</th>
+                <th className="py-2 px-3 text-indigo-300">Previous (ms)</th>
                 <th className="py-2 px-3 text-yellow-300">Change</th>
                 <th className="py-2 px-3">Stability</th>
               </tr>
@@ -168,10 +168,10 @@ export default function TimingAnalysis({ measurements }: TimingAnalysisProps) {
                   }`}>
                     <td className="py-3 px-3">{measurements.length - 5 + index + 1}</td>
                     <td className="py-3 px-3">{measurement.time}</td>
-                    <td className="py-3 px-3 text-blue-400 font-bold">{(measurement.intervalMs / 1000).toFixed(3)}s</td>
+                    <td className="py-3 px-3 text-blue-400 font-bold">{measurement.intervalMs} ms</td>
                     <td className="py-3 px-3 text-indigo-300">
                       {measurement.previousIntervalMs 
-                        ? (measurement.previousIntervalMs / 1000).toFixed(3) + 's'
+                        ? `${measurement.previousIntervalMs} ms`
                         : '-'}
                     </td>
                     <td className={`py-3 px-3 font-bold ${
