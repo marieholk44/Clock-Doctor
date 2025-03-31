@@ -178,8 +178,15 @@ export class AudioProcessor {
     this.stopRecording();
   }
 
+  // Store historical spectrograms to create a longer time view
+  private spectrogramHistory: Uint8Array[] = [];
+  private readonly historyLength = 15; // Store more frames to show a longer time window
+  
   private startAnalysisLoop(): void {
     if (!this.analyserNode) return;
+    
+    // Clear history when starting
+    this.spectrogramHistory = [];
     
     const analyzeAudio = () => {
       if (!this.analyserNode) return;
@@ -191,11 +198,20 @@ export class AudioProcessor {
       const spectrogramDataCopy = new Uint8Array(this.spectrogramData.length);
       spectrogramDataCopy.set(this.spectrogramData);
       
+      // Store in history for time-stretched display
+      if (this.spectrogramHistory.length >= this.historyLength) {
+        this.spectrogramHistory.shift(); // Remove oldest frame
+      }
+      this.spectrogramHistory.push(spectrogramDataCopy);
+      
+      // Create a combined spectrogram from history
+      const combinedSpectrogram = this.createCombinedSpectrogram();
+      
       // Debug info
-      console.log(`Spectrogram data: length=${spectrogramDataCopy.length}, non-zero=${spectrogramDataCopy.some(v => v > 0)}`);
+      console.log(`Spectrogram data: length=${combinedSpectrogram.length}, non-zero=${combinedSpectrogram.some(v => v > 0)}`);
       
       // Send to visualizer
-      this.config.onSpectrogramData(spectrogramDataCopy);
+      this.config.onSpectrogramData(combinedSpectrogram);
       
       // Get time domain data for waveform
       this.analyserNode.getByteTimeDomainData(this.waveformData);
@@ -204,8 +220,10 @@ export class AudioProcessor {
       const waveformDataCopy = new Uint8Array(this.waveformData.length);
       waveformDataCopy.set(this.waveformData);
       
-      // Debug info
-      console.log(`Waveform data: length=${waveformDataCopy.length}, non-zero=${waveformDataCopy.some(v => v !== 128)}`);
+      // Debug info (less frequent to reduce console spam)
+      if (Math.random() < 0.1) { // Only log ~10% of frames
+        console.log(`Waveform data: length=${waveformDataCopy.length}, non-zero=${waveformDataCopy.some(v => v !== 128)}`);
+      }
       
       // Send to visualizer
       this.config.onWaveformData(waveformDataCopy);
@@ -218,6 +236,53 @@ export class AudioProcessor {
     };
     
     analyzeAudio();
+  }
+  
+  // Create a combined spectrogram from history to show a longer time window
+  private createCombinedSpectrogram(): Uint8Array {
+    // If no history yet, return an empty array
+    if (this.spectrogramHistory.length === 0) {
+      return new Uint8Array(this.spectrogramData.length);
+    }
+    
+    // For better visualization of time patterns, we'll create a downsampled view
+    // that captures more time but with reduced frequency resolution
+    const frequencyBins = Math.min(256, this.spectrogramData.length);
+    const timeSteps = this.historyLength; 
+    
+    // Create output array
+    const result = new Uint8Array(frequencyBins * timeSteps);
+    
+    // For each time step (column in the visualization)
+    for (let t = 0; t < timeSteps; t++) {
+      // Get the history frame for this time step, or an empty one if we don't have enough history yet
+      const historyIndex = t - (timeSteps - this.spectrogramHistory.length);
+      const historyFrame = historyIndex >= 0 ? this.spectrogramHistory[historyIndex] : null;
+      
+      if (historyFrame) {
+        // Downsample the frequency data if needed
+        const step = Math.ceil(historyFrame.length / frequencyBins);
+        
+        for (let f = 0; f < frequencyBins; f++) {
+          // Average a range of frequency bins for smoother visualization
+          let sum = 0;
+          let count = 0;
+          
+          for (let i = 0; i < step; i++) {
+            const srcIdx = f * step + i;
+            if (srcIdx < historyFrame.length) {
+              sum += historyFrame[srcIdx];
+              count++;
+            }
+          }
+          
+          // Place in result array - layout is frequency bins stacked consecutively
+          result[t * frequencyBins + f] = count > 0 ? Math.floor(sum / count) : 0;
+        }
+      }
+    }
+    
+    return result;
   }
 
   private detectSounds(): void {
