@@ -9,5 +9,30 @@
 
   body {
     @apply font-sans antialiased bg-background text-foreground;
+    overflow-x: hidden; /* Prevent horizontal scrolling */
+  }
+
+  /* Better scrollbars for the app */
+  ::-webkit-scrollbar {
+    @apply w-2;
+  }
+
+  ::-webkit-scrollbar-track {
+    @apply bg-transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    @apply bg-muted-foreground/30 rounded-full hover:bg-muted-foreground/50 transition-colors;
+  }
+}
+
+/* Standalone mode specific styles */
+@layer utilities {
+  .standalone-app {
+    @apply min-h-screen;
+  }
+  
+  .standalone-header {
+    @apply sticky top-0 z-50 backdrop-blur-sm bg-background/80;
   }
 }

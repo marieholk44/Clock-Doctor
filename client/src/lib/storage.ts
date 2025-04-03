@@ -7,6 +7,9 @@ import {
 
 // Interface for storage operations
 export interface IStorage {
+  // Initialization
+  initialize(): Promise<void>;
+  
   // Recording operations
   getAllRecordings(): Promise<Recording[]>;
   getRecording(id: number): Promise<Recording | undefined>;
@@ -17,12 +20,13 @@ export interface IStorage {
   createMeasurement(measurement: InsertMeasurement): Promise<Measurement>;
 }
 
-// Local storage implementation using IndexedDB
+// LocalStorage implementation for frontend-only mode
 export class LocalStorage implements IStorage {
   private recordings: Map<number, Recording>;
   private measurements: Map<number, Measurement>;
   private recordingIdCounter: number;
   private measurementIdCounter: number;
+  private initialized: boolean = false;
   
   constructor() {
     this.recordings = new Map();
@@ -31,9 +35,21 @@ export class LocalStorage implements IStorage {
     // Initialize counters from localStorage or default to 1
     this.recordingIdCounter = parseInt(localStorage.getItem('recordingIdCounter') || '1');
     this.measurementIdCounter = parseInt(localStorage.getItem('measurementIdCounter') || '1');
+  }
+  
+  // Public initialization method that can be awaited
+  async initialize(): Promise<void> {
+    if (this.initialized) {
+      return;
+    }
     
-    // Load any existing data from localStorage
+    // Load existing data from localStorage
     this.loadFromLocalStorage();
+    this.initialized = true;
+    
+    // Log the storage status
+    console.log(`Loaded ${this.recordings.size} recordings and ${this.measurements.size} measurements from localStorage`);
+    return Promise.resolve();
   }
   
   private loadFromLocalStorage() {
@@ -81,14 +97,23 @@ export class LocalStorage implements IStorage {
   
   // Recording operations
   async getAllRecordings(): Promise<Recording[]> {
+    if (!this.initialized) {
+      await this.initialize();
+    }
     return Array.from(this.recordings.values());
   }
   
   async getRecording(id: number): Promise<Recording | undefined> {
+    if (!this.initialized) {
+      await this.initialize();
+    }
     return this.recordings.get(id);
   }
   
   async createRecording(recordingData: InsertRecording): Promise<Recording> {
+    if (!this.initialized) {
+      await this.initialize();
+    }
     const id = this.recordingIdCounter++;
     const recording: Recording = { ...recordingData, id };
     this.recordings.set(id, recording);
@@ -98,12 +123,18 @@ export class LocalStorage implements IStorage {
   
   // Measurement operations
   async getMeasurementsByRecordingId(recordingId: number): Promise<Measurement[]> {
+    if (!this.initialized) {
+      await this.initialize();
+    }
     return Array.from(this.measurements.values()).filter(
       measurement => measurement.recordingId === recordingId
     );
   }
   
   async createMeasurement(measurementData: InsertMeasurement): Promise<Measurement> {
+    if (!this.initialized) {
+      await this.initialize();
+    }
     const id = this.measurementIdCounter++;
     const measurement: Measurement = { ...measurementData, id };
     this.measurements.set(id, measurement);
