@@ -24,6 +24,7 @@ function Router() {
 }
 
 function App() {
+  // Always show standalone indicator for the frontend-only version
   return (
     <QueryClientProvider client={queryClient}>
       <Router />

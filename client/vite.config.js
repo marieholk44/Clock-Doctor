@@ -31,6 +31,6 @@ export default defineConfig({
   },
   define: {
     // Define global constants for the app
-    'import.meta.env.STANDALONE': process.env.STANDALONE === 'true' ? true : false,
+    'import.meta.env.STANDALONE': process.env.VITE_STANDALONE_MODE === 'true' ? true : false,
   },
 });

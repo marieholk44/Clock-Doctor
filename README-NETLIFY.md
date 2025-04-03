@@ -1,0 +1,55 @@
+# Deploying ClockTick Analyzer to Netlify
+
+This document provides steps for deploying the ClockTick Analyzer to Netlify as a frontend-only application.
+
+## Build for Netlify
+
+1. Run the Netlify build script:
+   ```
+   node build-for-netlify.js
+   ```
+
+2. This script will:
+   - Create the netlify.toml file with proper configuration
+   - Build the frontend application with standalone mode enabled
+   - Create the necessary redirects for SPA routing
+   - Output the build files to the `dist/` directory
+
+## Manual Deployment
+
+1. Go to [Netlify](https://app.netlify.com/)
+2. Create a new site by manual upload
+3. Drag and drop the `dist/` directory to the upload area
+4. Your site will be deployed with a Netlify subdomain
+
+## Git Repository Deployment
+
+If you're using a Git repository:
+
+1. Push your code to GitHub, GitLab, or Bitbucket
+2. Connect Netlify to your repository
+3. Configure build settings:
+   - Build command: `node build-for-netlify.js`
+   - Publish directory: `dist`
+4. Deploy your site
+
+## Environment Variables
+
+If needed, set these environment variables in Netlify:
+- `VITE_STANDALONE_MODE`: `true`
+
+## Testing the Deployment
+
+After deployment:
+1. Verify the application loads correctly
+2. Test recording functionality
+3. Confirm data is being saved to localStorage
+4. Check that the "Frontend-Only Mode" indicator is visible
+
+## Troubleshooting
+
+If you encounter issues:
+1. Check browser console for errors
+2. Verify localStorage is working and not blocked
+3. Ensure the _redirects file is present in the dist directory
+4. Review build logs in Netlify for any build errors

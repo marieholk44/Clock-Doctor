@@ -1,51 +1,57 @@
 #!/usr/bin/env node
 
-// This script starts the frontend-only version of the ClockTick Analyzer
-// No backend/server requirements - runs everything in the browser with localStorage
+/**
+ * This script starts the frontend-only version of the ClockTick Analyzer.
+ * It configures and launches a Vite development server for the client-side app.
+ */
 
-const path = require('path');
 const { spawn } = require('child_process');
 const fs = require('fs');
-const cwd = process.cwd();
+const path = require('path');
 
-// Make sure theme.json file exists in client directory
-const themeJsonPath = path.join(cwd, 'theme.json');
-const clientThemeJsonPath = path.join(cwd, 'client', 'theme.json');
-
-// Copy the theme.json file from root to client if it doesn't exist
-if (fs.existsSync(themeJsonPath) && !fs.existsSync(clientThemeJsonPath)) {
-  console.log('Copying theme.json to client directory...');
-  fs.copyFileSync(themeJsonPath, clientThemeJsonPath);
-}
-
-// Set environment variables for standalone mode
-process.env.STANDALONE = 'true';
+// Ensure we're in the project root
+const rootDir = process.cwd();
+const clientDir = path.join(rootDir, 'client');
 
 console.log('Starting ClockTick Analyzer in frontend-only mode...');
-console.log('This will use localStorage for data persistence.');
-console.log('No server/backend is required to run this application.');
 
-// Start the Vite development server for the client
-const viteProcess = spawn('npx', ['vite', 'serve', 'client', '--host', '0.0.0.0', '--port', '5173'], {
-  cwd,
+// Make sure client directory exists
+if (!fs.existsSync(clientDir)) {
+  console.error('Error: Client directory not found.');
+  console.error('Expected client directory at:', clientDir);
+  process.exit(1);
+}
+
+// Start the Vite server with env variables for standalone mode
+const env = {
+  ...process.env,
+  VITE_STANDALONE_MODE: 'true',
+  PORT: process.env.PORT || '5173'
+};
+
+// Run "vite" in the client directory
+const viteProcess = spawn('vite', [], {
+  cwd: clientDir,
+  env,
   stdio: 'inherit',
-  env: {
-    ...process.env,
-    STANDALONE: 'true'
-  }
+  shell: true
 });
 
+// Handle process events
 viteProcess.on('error', (err) => {
   console.error('Failed to start Vite server:', err);
   process.exit(1);
 });
 
-// Handle cleanup on exit
-process.on('SIGINT', () => {
-  console.log('Shutting down...');
-  viteProcess.kill('SIGINT');
-  process.exit(0);
+viteProcess.on('close', (code) => {
+  console.log(`Vite server exited with code ${code}`);
+  process.exit(code);
 });
 
-console.log('Frontend-only mode initialized!');
-console.log('App is running at http://localhost:5173');
+// Add event handlers for termination signals
+['SIGINT', 'SIGTERM'].forEach(signal => {
+  process.on(signal, () => {
+    console.log(`\nReceived ${signal}, shutting down...`);
+    viteProcess.kill(signal);
+  });
+});
