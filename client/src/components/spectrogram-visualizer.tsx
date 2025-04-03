@@ -44,8 +44,8 @@ export default function SpectrogramVisualizer({ spectrogramData }: SpectrogramVi
       ctx.stroke();
     }
     
-    // Vertical grid lines (time) - 6 divisions for 30 seconds (every 5 seconds)
-    for (let x = 0; x < width; x += width / 6) {
+    // Vertical grid lines (time) - 5 divisions for 10 seconds (every 2 seconds)
+    for (let x = 0; x < width; x += width / 5) {
       ctx.beginPath();
       ctx.moveTo(x, 0);
       ctx.lineTo(x, height);
@@ -125,7 +125,7 @@ export default function SpectrogramVisualizer({ spectrogramData }: SpectrogramVi
         ctx.fillText('past', 2, 12);
         
         // Add time scale
-        const totalTimeSeconds = 30; // Based on 120 frames at 4fps = 0.25s per frame
+        const totalTimeSeconds = 10; // Based on 40 frames at 4fps = 0.25s per frame
         ctx.fillStyle = 'rgba(148, 163, 184, 0.7)';
         ctx.textAlign = 'center';
         ctx.fillText(`${totalTimeSeconds.toFixed(1)}s time window`, width / 2, height - 4);
@@ -182,18 +182,17 @@ export default function SpectrogramVisualizer({ spectrogramData }: SpectrogramVi
         </div>
         
         <div className="absolute top-2 right-2 bg-blue-900/60 text-xs text-white px-2 py-1 rounded">
-          <span>30 second window</span>
+          <span>10 second window</span>
         </div>
       </div>
       
       <div className="mt-3 flex justify-between text-xs text-slate-400">
         <span>0s</span>
-        <span>5s</span>
+        <span>2s</span>
+        <span>4s</span>
+        <span>6s</span>
+        <span>8s</span>
         <span>10s</span>
-        <span>15s</span>
-        <span>20s</span>
-        <span>25s</span>
-        <span>30s</span>
       </div>
     </div>
   );

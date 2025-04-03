@@ -180,7 +180,7 @@ export class AudioProcessor {
 
   // Store historical spectrograms to create a longer time view
   private spectrogramHistory: Uint8Array[] = [];
-  private readonly historyLength = 120; // Store frames to show a 30 second time window (120 frames at ~4 frames/sec)
+  private readonly historyLength = 40; // Store frames to show a 10 second time window (40 frames at ~4 frames/sec)
   
   private startAnalysisLoop(): void {
     if (!this.analyserNode) return;
@@ -190,7 +190,7 @@ export class AudioProcessor {
     
     // Track time for frame rate control
     let lastCaptureTime = 0;
-    let frameInterval = 250; // Aim for ~4 frames per second, to get a 30 second history with 120 frames
+    let frameInterval = 250; // Aim for ~4 frames per second, to get a 10 second history with 40 frames
     
     const analyzeAudio = () => {
       if (!this.analyserNode) return;
