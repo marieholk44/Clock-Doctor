@@ -2,61 +2,66 @@
 
 A specialized web application for clock repair professionals, leveraging advanced audio-based timing analysis through interactive spectrogram and waveform visualizations.
 
-## Features
+![ClockTick Analyzer](https://via.placeholder.com/800x400?text=ClockTick+Analyzer)
 
-- **Audio Recording and Analysis**: Record clock ticking sounds for precise timing analysis.
-- **Waveform Visualization**: Real-time visual representation of audio patterns.
-- **Spectrogram Display**: Frequency analysis for detecting sound variations.
-- **Interval Measurements**: Calculate and analyze time intervals between consecutive sounds.
-- **Precision Timing**: Track deviations for clock mechanism diagnostics.
-- **Frontend-Only Operation**: No backend dependencies, using localStorage for persistence.
+## About the Application
 
-## Running the Application
+ClockTick Analyzer is a tool designed specifically for clock repair technicians to analyze the timing accuracy of mechanical clocks. The application:
 
-### Standard Mode (with Backend)
+- Records audio from mechanical clocks
+- Displays waveform visualizations for timing analysis
+- Shows spectrogram visualizations for frequency analysis
+- Measures intervals between consecutive sounds (ticks and tocks)
+- Calculates beat frequency and timing deviation
+- Provides in-depth analysis of time-keeping accuracy
 
-```bash
-npm run dev
-```
+## Key Features
 
-This starts both the backend server and frontend client in development mode.
-
-### Frontend-Only Mode (No Backend)
-
-```bash
-npm run dev-frontend
-```
-
-This runs the application in frontend-only mode, with all data stored in the browser's localStorage.
+- **Audio Recording**: Capture clock sounds with microphone selection
+- **Real-time Analysis**: Process and analyze audio in real-time
+- **Waveform Display**: Visualize amplitude patterns of clock sounds
+- **Spectrogram View**: Analyze frequency components of each tick
+- **Timing Calculations**: Measure intervals between consecutive sounds
+- **Deviation Detection**: Identify inconsistencies in timing
+- **Frontend-only Mode**: Works entirely in the browser with localStorage
 
 ## Technical Details
 
-- **Frontend**: React with TypeScript, Tailwind CSS
-- **UI Components**: ShadcnUI component library
-- **State Management**: React Query
-- **Form Handling**: React Hook Form with Zod validation
-- **Audio Processing**: Web Audio API with custom analyzer
-- **Data Storage**: LocalStorage (frontend-only mode)
+- Built with React and TypeScript
+- Uses Web Audio API for audio processing
+- Canvas-based visualization for waveform and spectrogram
+- Frontend-only application with localStorage for data persistence
+- No backend dependencies
 
-## Developer Notes
+## Getting Started
 
-- Backend configuration is stored in `server/` directory but not required for frontend-only mode
-- Audio processing configuration can be adjusted in `client/src/lib/audio-processor.ts`
-- Visual theme is customizable via `theme.json`
+1. Clone the repository
+2. Run `npm install`
+3. Start the development server with `npm run dev`
+4. Open your browser to the displayed URL
 
-## Building For Production
+## Deployment
 
-### Complete Application (Frontend + Backend)
+This application is designed to be deployed to Netlify as a frontend-only application. See the [GitHub and Netlify Deployment Guide](GITHUB_NETLIFY_DEPLOYMENT.md) for detailed instructions.
 
-```bash
-npm run build
-npm run start
-```
+## Using the Application
 
-### Frontend-Only
+1. **Connect a microphone** and select the appropriate input device
+2. **Adjust sensitivity** using the threshold and noise reduction controls
+3. **Start recording** to begin capturing clock sounds
+4. **Review measurements** in the timing analysis section
+5. **Analyze waveform** to visualize the timing pattern
+6. **Examine spectrogram** to identify frequency characteristics
 
-```bash
-npm run build-frontend
-```
+## For Clock Repair Technicians
 
-This creates a standalone frontend build in the `dist/` directory.
+This tool helps you:
+- Diagnose timing issues in mechanical clocks
+- Measure beat accuracy and consistency
+- Detect irregular patterns in escapement mechanisms
+- Identify problems in the clockwork that affect timing
+- Document improvements after repairs
+
+## License
+
+MIT License

@@ -1,4 +1,0 @@
-{
-  "name": "Start Standalone Frontend",
-  "command": "node start-standalone.js"
-}

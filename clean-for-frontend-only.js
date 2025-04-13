@@ -5,9 +5,13 @@
  * by removing server-related files and directories.
  */
 
-const fs = require('fs');
-const path = require('path');
-const { execSync } = require('child_process');
+import fs from 'fs';
+import path from 'path';
+import { execSync } from 'child_process';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 console.log('Cleaning project for frontend-only version...');
 
@@ -83,25 +87,8 @@ try {
   console.error(`❌ Error creating netlify.toml: ${err.message}`);
 }
 
-// Update the workflow configuration to use frontend-only mode
-const workflowConfig = {
-  "Configured Workflows": [
-    {
-      "name": "Start application",
-      "command": "npm run dev"
-    }
-  ]
-};
-
-try {
-  fs.writeFileSync(
-    path.join(rootDir, '.replit'),
-    JSON.stringify(workflowConfig, null, 2)
-  );
-  console.log('✅ Updated workflow configuration');
-} catch (err) {
-  console.error(`❌ Error updating workflow configuration: ${err.message}`);
-}
+// Don't attempt to update the .replit file since it's protected
+console.log('✅ Skipping workflow configuration update (protected file)');
 
 console.log(`\nCleanup complete! Removed ${removedCount} server-related files/directories.`);
 console.log('\nThe project is now ready for frontend-only deployment to Netlify!');

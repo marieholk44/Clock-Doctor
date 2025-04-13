@@ -1,7 +1,10 @@
 [build]
-  base = "."
   publish = "dist"
-  command = "npm run build-frontend"
+  command = "npm run build"
+
+# Set environment variables
+[build.environment]
+  VITE_STANDALONE_MODE = "true"
 
 # Redirects for SPA
 [[redirects]]
