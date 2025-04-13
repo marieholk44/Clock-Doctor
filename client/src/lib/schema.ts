@@ -1,31 +1,38 @@
-import { z } from "zod";
+import { z } from 'zod';
 
-// Recording schema
+// Define base schemas for our data models
 export const recordingSchema = z.object({
   id: z.number(),
   name: z.string(),
-  date: z.string().or(z.date()),
-  duration: z.number(), // in seconds
-  notes: z.string().optional(),
+  description: z.string().optional(),
+  date: z.string().datetime(),
+  duration: z.number().optional(),
 });
 
-// Measurement schema
 export const measurementSchema = z.object({
   id: z.number(),
   recordingId: z.number(),
-  tickToTock: z.number(), // in milliseconds
-  tockToTick: z.number(), // in milliseconds
-  fullCycle: z.number(),  // in milliseconds
-  timestamp: z.string().or(z.date()),
-  rawData: z.record(z.any()).optional(),
+  time: z.string(),
+  intervalMs: z.number(),
+  frequency: z.number(),
+  deviation: z.number(),
+  previousIntervalMs: z.number().optional(),
+  changeFromPrevious: z.number().optional(),
 });
 
-// Insert schemas (without ID for creation)
+// Define insert schemas (excluding auto-generated fields)
 export const insertRecordingSchema = recordingSchema.omit({ id: true });
 export const insertMeasurementSchema = measurementSchema.omit({ id: true });
 
-// Types
+// Export types
 export type Recording = z.infer<typeof recordingSchema>;
 export type InsertRecording = z.infer<typeof insertRecordingSchema>;
 export type Measurement = z.infer<typeof measurementSchema>;
 export type InsertMeasurement = z.infer<typeof insertMeasurementSchema>;
+
+// Also define the DetectedSound interface used in the audio processing
+export interface DetectedSound {
+  type: "pulse"; // Using a single type for all clock sounds
+  timestamp: number;
+  magnitude: number;
+}

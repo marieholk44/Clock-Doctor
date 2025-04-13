@@ -5,27 +5,63 @@
  * specifically for deployment to Netlify.
  */
 
-const { spawn } = require('child_process');
 const fs = require('fs');
 const path = require('path');
+const { execSync } = require('child_process');
 
 console.log('Building ClockTick Analyzer for Netlify deployment...');
 
-// Ensure we're in the project root
 const rootDir = process.cwd();
-const clientDir = path.join(rootDir, 'client');
+
+// Ensure we're using the frontend-only version
+if (fs.existsSync(path.join(rootDir, 'server'))) {
+  console.log('⚠️ Backend code detected! Running cleanup script first...');
+  try {
+    execSync('node clean-for-frontend-only.js', { stdio: 'inherit' });
+  } catch (err) {
+    console.error(`❌ Error running cleanup script: ${err.message}`);
+    process.exit(1);
+  }
+}
+
+// Create redirects file for Netlify SPA
+const redirectsContent = '/* /index.html 200';
 const distDir = path.join(rootDir, 'dist');
 
-// Set environment variables for the build
-const env = {
-  ...process.env,
-  VITE_STANDALONE_MODE: 'true',
-};
+// Ensure env variable is set for standalone mode
+process.env.VITE_STANDALONE_MODE = 'true';
 
-// Create the netlify.toml file for proper deployments
+// Build the frontend
+console.log('\n📦 Building frontend...');
+try {
+  execSync('npm run build', { stdio: 'inherit' });
+  console.log('✅ Build completed successfully');
+} catch (err) {
+  console.error(`❌ Build failed: ${err.message}`);
+  process.exit(1);
+}
+
+// Create _redirects file in the dist directory
+try {
+  if (!fs.existsSync(distDir)) {
+    console.error('❌ Build directory (dist) not found');
+    process.exit(1);
+  }
+  
+  fs.writeFileSync(path.join(distDir, '_redirects'), redirectsContent);
+  console.log('✅ Created _redirects file for SPA routing');
+} catch (err) {
+  console.error(`❌ Error creating _redirects file: ${err.message}`);
+}
+
+// Create netlify.toml file if it doesn't exist
 const netlifyToml = `[build]
   publish = "dist"
-  command = "node build-for-netlify.js"
+  command = "npm run build"
+
+# Set environment variables
+[build.environment]
+  VITE_STANDALONE_MODE = "true"
 
 # Redirects for SPA
 [[redirects]]
@@ -34,43 +70,18 @@ const netlifyToml = `[build]
   status = 200
 `;
 
-fs.writeFileSync(path.join(rootDir, 'netlify.toml'), netlifyToml);
-console.log('Created netlify.toml configuration file');
-
-// Create _redirects file for Netlify (alternative to netlify.toml)
-if (!fs.existsSync(distDir)) {
-  fs.mkdirSync(distDir, { recursive: true });
-}
-fs.writeFileSync(path.join(distDir, '_redirects'), '/* /index.html 200');
-console.log('Created _redirects file for Netlify');
-
-// Run the build command
-console.log('Running Vite build...');
-const buildProcess = spawn('vite', ['build'], {
-  cwd: clientDir,
-  env,
-  stdio: 'inherit',
-  shell: true
-});
-
-buildProcess.on('error', (err) => {
-  console.error('Failed to run build:', err);
-  process.exit(1);
-});
-
-buildProcess.on('close', (code) => {
-  if (code === 0) {
-    console.log('Build completed successfully!');
-    console.log('\nDeployment files are ready in the dist/ directory');
-    console.log('Upload this directory to Netlify for hosting');
-    
-    // Ensure _redirects file exists in the build output
-    if (!fs.existsSync(path.join(distDir, '_redirects'))) {
-      fs.writeFileSync(path.join(distDir, '_redirects'), '/* /index.html 200');
-      console.log('Added _redirects file to build output');
-    }
-  } else {
-    console.error(`Build process exited with code ${code}`);
-    process.exit(code);
+if (!fs.existsSync(path.join(rootDir, 'netlify.toml'))) {
+  try {
+    fs.writeFileSync(path.join(rootDir, 'netlify.toml'), netlifyToml);
+    console.log('✅ Created netlify.toml configuration file');
+  } catch (err) {
+    console.error(`❌ Error creating netlify.toml: ${err.message}`);
   }
-});
+}
+
+console.log('\n🚀 Build for Netlify completed!');
+console.log('\nYour app is ready for deployment:');
+console.log('1. Upload the "dist" directory to Netlify');
+console.log('2. Or connect your GitHub repository to Netlify');
+console.log('   - Build command: npm run build');
+console.log('   - Publish directory: dist');
