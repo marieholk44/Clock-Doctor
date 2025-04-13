@@ -5,9 +5,9 @@
   "license": "MIT",
   "description": "Frontend-only version of ClockTick Analyzer for clock repair professionals",
   "scripts": {
-    "dev": "node start-frontend.js",
-    "build": "vite build",
-    "preview": "vite preview client --host 0.0.0.0 --port 5173"
+    "dev": "vite client",
+    "build": "vite build client",
+    "preview": "vite preview client"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.1",
